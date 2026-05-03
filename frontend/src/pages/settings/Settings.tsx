@@ -42,6 +42,33 @@ function PermissionToggle({
   );
 }
 
+function SettingsSection({
+  title,
+  defaultOpen = true,
+  actions,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <details open={defaultOpen} className="group rounded-[28px] border border-white/10 bg-white/[0.04]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
+        <div className="text-lg font-semibold text-white">{title}</div>
+        <div className="flex items-center gap-3">
+          {actions}
+          <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-white/34 group-open:text-cyan-200">
+            {defaultOpen ? 'Live' : 'Open'}
+          </div>
+        </div>
+      </summary>
+      <div className="border-t border-white/8 px-5 py-5">{children}</div>
+    </details>
+  );
+}
+
 export default function Settings() {
   const queryClient = useQueryClient();
   const [companyForm, setCompanyForm] = useState({
@@ -113,7 +140,7 @@ export default function Settings() {
   const companyMutation = useMutation({
     mutationFn: () => saveCompanySettings(companyForm),
     onSuccess: () => {
-      toast.success('Company policies and work hours saved.');
+      toast.success('Company settings saved.');
       void queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
     },
     onError: (error) => {
@@ -178,65 +205,44 @@ export default function Settings() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Admin Settings"
-        title="Control policies, permissions, and work-hour rules"
-        description="Configure geofence settings, adjust attendance timing, and manage database-driven role permissions from one control plane."
+        title="Settings"
+        description="Company schedule, geofence, and role permissions."
         stats={[
           { label: 'Company', value: companyForm.company_name || 'GeoVerify.in' },
           { label: 'Timezone', value: companyForm.timezone || 'Asia/Kolkata' },
         ]}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <GlassPanel glow="blue" contentClassName="p-6">
-          <div className="flex items-start gap-4">
-            <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-600 dark:text-cyan-300">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">Company policies</h2>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">
-                Set the official policy text, attendance window, and working-day schedule that the backend enforces.
-              </p>
-            </div>
-          </div>
-
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              companyMutation.mutate();
-            }}
-            className="mt-6 space-y-5"
+      <div className="grid gap-6 xl:grid-cols-[0.86fr_1.14fr]">
+        <div className="space-y-6">
+          <SettingsSection
+            title="Company"
+            actions={
+              <button
+                type="button"
+                onClick={() => companyMutation.mutate()}
+                disabled={companyMutation.isPending}
+                className="glass-button-primary px-4 py-2 text-sm disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" />
+                Save
+              </button>
+            }
           >
-            <div>
-              <label className="glass-label" htmlFor="company-name">
-                Company name
-              </label>
-              <input
-                id="company-name"
-                type="text"
-                value={companyForm.company_name}
-                onChange={(event) => setCompanyForm((current) => ({ ...current, company_name: event.target.value }))}
-                className="glass-input"
-              />
-            </div>
-
-            <div>
-              <label className="glass-label" htmlFor="company-policies">
-                Company policies
-              </label>
-              <textarea
-                id="company-policies"
-                rows={6}
-                value={companyForm.company_policies}
-                onChange={(event) =>
-                  setCompanyForm((current) => ({ ...current, company_policies: event.target.value }))
-                }
-                className="glass-textarea"
-              />
-            </div>
-
             <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="glass-label" htmlFor="company-name">
+                  Company name
+                </label>
+                <input
+                  id="company-name"
+                  type="text"
+                  value={companyForm.company_name}
+                  onChange={(event) => setCompanyForm((current) => ({ ...current, company_name: event.target.value }))}
+                  className="glass-input"
+                />
+              </div>
+
               <div>
                 <label className="glass-label" htmlFor="workday-start">
                   Workday start
@@ -245,9 +251,7 @@ export default function Settings() {
                   id="workday-start"
                   type="time"
                   value={companyForm.workday_start}
-                  onChange={(event) =>
-                    setCompanyForm((current) => ({ ...current, workday_start: event.target.value }))
-                  }
+                  onChange={(event) => setCompanyForm((current) => ({ ...current, workday_start: event.target.value }))}
                   className="glass-input"
                 />
               </div>
@@ -271,9 +275,7 @@ export default function Settings() {
                   id="check-in-open"
                   type="time"
                   value={companyForm.check_in_open}
-                  onChange={(event) =>
-                    setCompanyForm((current) => ({ ...current, check_in_open: event.target.value }))
-                  }
+                  onChange={(event) => setCompanyForm((current) => ({ ...current, check_in_open: event.target.value }))}
                   className="glass-input"
                 />
               </div>
@@ -289,197 +291,176 @@ export default function Settings() {
                   className="glass-input"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="glass-label" htmlFor="company-timezone">
-                Timezone
-              </label>
-              <input
-                id="company-timezone"
-                type="text"
-                value={companyForm.timezone}
-                onChange={(event) => setCompanyForm((current) => ({ ...current, timezone: event.target.value }))}
-                className="glass-input"
-              />
-            </div>
-
-            <div className="flex justify-end">
-              <button type="submit" disabled={companyMutation.isPending} className="glass-button-primary disabled:opacity-60">
-                <Save className="h-4 w-4" />
-                {companyMutation.isPending ? 'Saving...' : 'Save company settings'}
-              </button>
-            </div>
-          </form>
-        </GlassPanel>
-
-        <div className="space-y-6">
-          <GlassPanel glow="emerald" contentClassName="p-6">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-emerald-600 dark:text-emerald-300">
-                <MapPin className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">Office perimeter</h2>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">
-                  Set the approved office coordinates and allowed radius for attendance capture.
-                </p>
-              </div>
-            </div>
-
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                officeMutation.mutate();
-              }}
-              className="mt-6 space-y-4"
-            >
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="glass-label" htmlFor="company-timezone">
+                  Timezone
+                </label>
                 <input
+                  id="company-timezone"
+                  type="text"
+                  value={companyForm.timezone}
+                  onChange={(event) => setCompanyForm((current) => ({ ...current, timezone: event.target.value }))}
+                  className="glass-input"
+                />
+              </div>
+            </div>
+
+            <details className="mt-5 rounded-[22px] border border-white/10 bg-black/10">
+              <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-white/78">Policy text</summary>
+              <div className="border-t border-white/8 p-4">
+                <textarea
+                  rows={6}
+                  value={companyForm.company_policies}
+                  onChange={(event) => setCompanyForm((current) => ({ ...current, company_policies: event.target.value }))}
+                  className="glass-textarea"
+                />
+              </div>
+            </details>
+          </SettingsSection>
+
+          <SettingsSection
+            title="Office"
+            actions={
+              <button
+                type="button"
+                onClick={() => officeMutation.mutate()}
+                disabled={officeMutation.isPending}
+                className="glass-button-primary px-4 py-2 text-sm disabled:opacity-60"
+              >
+                <Radar className="h-4 w-4" />
+                Save
+              </button>
+            }
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="glass-label" htmlFor="office-latitude">
+                  Latitude
+                </label>
+                <input
+                  id="office-latitude"
                   required
                   type="number"
                   step="any"
                   value={officeForm.latitude}
                   onChange={(event) => setOfficeForm((current) => ({ ...current, latitude: event.target.value }))}
                   className="glass-input"
-                  placeholder="Latitude"
                 />
+              </div>
+              <div>
+                <label className="glass-label" htmlFor="office-longitude">
+                  Longitude
+                </label>
                 <input
+                  id="office-longitude"
                   required
                   type="number"
                   step="any"
                   value={officeForm.longitude}
                   onChange={(event) => setOfficeForm((current) => ({ ...current, longitude: event.target.value }))}
                   className="glass-input"
-                  placeholder="Longitude"
                 />
               </div>
+              <div className="sm:col-span-2">
+                <label className="glass-label" htmlFor="office-radius">
+                  Allowed radius (meters)
+                </label>
+                <input
+                  id="office-radius"
+                  required
+                  type="number"
+                  value={officeForm.allowed_radius}
+                  onChange={(event) => setOfficeForm((current) => ({ ...current, allowed_radius: event.target.value }))}
+                  className="glass-input"
+                />
+              </div>
+            </div>
 
-              <input
-                required
-                type="number"
-                value={officeForm.allowed_radius}
-                onChange={(event) => setOfficeForm((current) => ({ ...current, allowed_radius: event.target.value }))}
-                className="glass-input"
-                placeholder="Allowed radius in meters"
-              />
-
-              <div className="mt-8 flex items-center justify-center">
-                <div className="relative flex h-64 w-64 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400/15 via-white/65 to-emerald-400/10 dark:from-cyan-400/10 dark:via-white/4 dark:to-emerald-400/10">
-                  <div
-                    className="absolute rounded-full border border-cyan-400/40 bg-cyan-400/8"
-                    style={{ width: radiusPreview, height: radiusPreview }}
-                  />
-                  <div
-                    className="absolute rounded-full border border-emerald-400/25"
-                    style={{ width: Math.max(44, radiusPreview * 0.58), height: Math.max(44, radiusPreview * 0.58) }}
-                  />
-                  <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-[0_16px_40px_rgba(14,165,233,0.35)]">
-                    <MapPin className="h-6 w-6" />
-                  </div>
+            <div className="mt-8 flex items-center justify-center">
+              <div className="relative flex h-64 w-64 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400/10 via-white/[0.04] to-emerald-400/10">
+                <div
+                  className="absolute rounded-full border border-cyan-400/35 bg-cyan-400/8"
+                  style={{ width: radiusPreview, height: radiusPreview }}
+                />
+                <div
+                  className="absolute rounded-full border border-emerald-400/20"
+                  style={{ width: Math.max(44, radiusPreview * 0.58), height: Math.max(44, radiusPreview * 0.58) }}
+                />
+                <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 text-white shadow-[0_16px_40px_rgba(0,212,255,0.24)]">
+                  <MapPin className="h-6 w-6" />
                 </div>
               </div>
-
-              <div className="flex justify-end">
-                <button type="submit" disabled={officeMutation.isPending} className="glass-button-primary disabled:opacity-60">
-                  <Radar className="h-4 w-4" />
-                  {officeMutation.isPending ? 'Saving...' : 'Save office settings'}
-                </button>
-              </div>
-            </form>
-          </GlassPanel>
-
-          <GlassPanel glow="amber" contentClassName="p-6">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-3 text-amber-600 dark:text-amber-300">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-slate-950 dark:text-white">Policy reminder</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300/62">
-                  Check-in timing uses the company settings above. Geofence radius should reflect the real office footprint to avoid false negatives near the building edge.
-                </p>
-              </div>
             </div>
-          </GlassPanel>
+          </SettingsSection>
         </div>
-      </div>
 
-      <GlassPanel glow="blue" contentClassName="p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-300/45">
-              Role Permissions
+        <GlassPanel glow="blue" contentClassName="p-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-white/30">Access Matrix</div>
+              <div className="mt-2 text-2xl font-semibold text-white">Role permissions</div>
             </div>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
-              Database-driven access control matrix
-            </h2>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">
-              Toggle module-level access for each role. These values are loaded by the frontend before routes render.
-            </p>
+            <button
+              type="button"
+              onClick={() => permissionsMutation.mutate()}
+              disabled={permissionsMutation.isPending}
+              className="glass-button-primary disabled:opacity-60"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Save permissions
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => permissionsMutation.mutate()}
-            disabled={permissionsMutation.isPending}
-            className="glass-button-primary disabled:opacity-60"
-          >
-            <Save className="h-4 w-4" />
-            {permissionsMutation.isPending ? 'Saving...' : 'Save permissions'}
-          </button>
-        </div>
+          <div className="grid gap-6 xl:grid-cols-2">
+            {(['admin', 'employee'] as EmployeeRole[]).map((role) => (
+              <div key={role} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+                <div className="mb-4 text-lg font-semibold capitalize text-white">{role}</div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-2">
-          {(['admin', 'employee'] as EmployeeRole[]).map((role) => (
-            <div key={role} className="rounded-[28px] border border-white/55 bg-white/70 p-5 dark:border-white/10 dark:bg-white/5">
-              <div className="mb-4 text-lg font-semibold capitalize text-slate-950 dark:text-white">{role}</div>
-
-              <div className="space-y-3">
-                {permissionGroups[role].map((permission) => (
-                  <div
-                    key={`${permission.role}-${permission.module}`}
-                    className="rounded-[22px] border border-white/45 bg-white/72 p-4 dark:border-white/8 dark:bg-slate-950/40"
-                  >
-                    <div className="mb-3 flex items-center justify-between gap-4">
-                      <div>
-                        <div className="font-medium text-slate-950 dark:text-white">
-                          {MODULE_LABELS[permission.module]}
-                        </div>
-                        <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300/45">
-                          {permission.module}
+                <div className="space-y-3">
+                  {permissionGroups[role].map((permission) => (
+                    <div
+                      key={`${permission.role}-${permission.module}`}
+                      className="rounded-[22px] border border-white/8 bg-black/10 p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between gap-4">
+                        <div>
+                          <div className="font-medium text-white">{MODULE_LABELS[permission.module]}</div>
+                          <div className="text-[11px] uppercase tracking-[0.18em] text-white/28">
+                            {permission.module}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                      {(
-                        [
-                          ['can_view', 'View'],
-                          ['can_create', 'Create'],
-                          ['can_edit', 'Edit'],
-                          ['can_delete', 'Delete'],
-                          ['can_approve', 'Approve'],
-                          ['can_export', 'Export'],
-                        ] as const
-                      ).map(([field, label]) => (
-                        <div key={field} className="flex items-center justify-between gap-3 rounded-2xl border border-white/45 bg-white/70 px-3 py-3 dark:border-white/8 dark:bg-white/5">
-                          <span className="text-sm text-slate-600 dark:text-slate-300/65">{label}</span>
-                          <PermissionToggle
-                            checked={permission[field]}
-                            onToggle={() => togglePermission(role, permission.module, field)}
-                            label={`${label} permission for ${role} ${permission.module}`}
-                          />
-                        </div>
-                      ))}
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                        {(
+                          [
+                            ['can_view', 'View'],
+                            ['can_create', 'Create'],
+                            ['can_edit', 'Edit'],
+                            ['can_delete', 'Delete'],
+                            ['can_approve', 'Approve'],
+                            ['can_export', 'Export'],
+                          ] as const
+                        ).map(([field, label]) => (
+                          <div key={field} className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3">
+                            <span className="text-sm text-white/62">{label}</span>
+                            <PermissionToggle
+                              checked={permission[field]}
+                              onToggle={() => togglePermission(role, permission.module, field)}
+                              label={`${label} permission for ${role} ${permission.module}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </GlassPanel>
+            ))}
+          </div>
+        </GlassPanel>
+      </div>
     </div>
   );
 }

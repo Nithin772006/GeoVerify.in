@@ -1,24 +1,22 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LayoutDashboard, CalendarCheck, Users, CalendarOff, PieChart, Settings, LogOut, ChevronLeft, ChevronRight, Sparkles, X } from 'lucide-react';
+import { CalendarCheck, CalendarOff, LayoutDashboard, LogOut, PieChart, Settings, Sparkles, Users, X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarProps {
-  collapsed: boolean;
   mobileOpen: boolean;
-  onCollapseToggle: () => void;
   onMobileClose: () => void;
 }
 
 interface SidebarBodyProps {
-  collapsed: boolean;
-  onCollapseToggle: () => void;
+  expanded: boolean;
   onNavigate?: () => void;
   mobile?: boolean;
 }
 
-function SidebarBody({ collapsed, onCollapseToggle, onNavigate, mobile = false }: SidebarBodyProps) {
+function SidebarBody({ expanded, onNavigate, mobile = false }: SidebarBodyProps) {
   const { role, signOut, user, hasModuleAccess } = useAuth();
 
   const adminLinks = [
@@ -38,30 +36,32 @@ function SidebarBody({ collapsed, onCollapseToggle, onNavigate, mobile = false }
   ];
 
   const links = (role === 'admin' ? adminLinks : employeeLinks).filter((link) => hasModuleAccess(link.module));
+  const initials = role === 'admin' ? 'AD' : 'EM';
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden rounded-[30px] border border-white/10 bg-slate-950/78 backdrop-blur-2xl">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_28%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),transparent_28%,rgba(15,23,42,0.22))]" />
+    <div className="relative flex h-full flex-col overflow-hidden rounded-[30px] border border-white/10 bg-[#09121e]/82 backdrop-blur-2xl">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,212,255,0.2),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(0,184,150,0.14),transparent_28%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_26%,rgba(2,6,23,0.28))]" />
 
-      <div className="relative flex items-center gap-3 px-5 pb-5 pt-6">
+      <div className={cn('relative flex items-center gap-3 px-4 pb-5 pt-6', !expanded && !mobile && 'justify-center px-0')}>
         <motion.div
           animate={{ rotate: [0, 360] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-          className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-2.5 shadow-[0_0_35px_rgba(34,211,238,0.25)]"
+          transition={{ duration: 11, repeat: Infinity, ease: 'linear' }}
+          className="rounded-2xl border border-cyan-400/18 bg-cyan-400/10 p-2.5 shadow-[0_0_35px_rgba(0,212,255,0.18)]"
         >
           <Sparkles className="h-6 w-6 shrink-0 text-cyan-300" />
         </motion.div>
         <AnimatePresence>
-          {!collapsed && (
-            <motion.h1
+          {(expanded || mobile) && (
+            <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              className="whitespace-nowrap text-xl font-bold text-white"
+              className="min-w-0 whitespace-nowrap"
             >
-              GeoVerify.in
-            </motion.h1>
+              <div className="text-sm font-semibold uppercase tracking-[0.32em] text-white/36">GeoVerify</div>
+              <div className="text-lg font-bold text-white">Attendance OS</div>
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -75,40 +75,26 @@ function SidebarBody({ collapsed, onCollapseToggle, onNavigate, mobile = false }
         )}
       </div>
 
-      <div className="relative px-5">
-        <div className="rounded-2xl border border-white/10 bg-white/6 p-4 shadow-[0_18px_50px_rgba(2,6,23,0.28)]">
-          <div className="text-xs uppercase tracking-[0.22em] text-white/35">Workspace</div>
-          <div className="mt-2 text-sm font-semibold text-white">{role === 'admin' ? 'Admin command deck' : 'Employee mission panel'}</div>
-          {!collapsed && (
-            <div className="mt-3 flex items-center gap-2 text-xs text-white/55">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.8)]" />
-              Live sync active
-            </div>
-          )}
+      <div className={cn('relative px-3', !expanded && !mobile && 'px-2')}>
+        <div className={cn('flex items-center gap-3 rounded-[22px] border border-white/8 bg-white/[0.04] px-3 py-3 shadow-[0_18px_50px_rgba(2,6,23,0.2)]', !expanded && !mobile && 'justify-center px-0')}>
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(74,222,128,0.85)]" />
+          {(expanded || mobile) ? (
+            <div className="text-xs font-medium uppercase tracking-[0.26em] text-white/46">Live Sync</div>
+          ) : null}
         </div>
       </div>
 
-      {!mobile && (
-        <button
-          onClick={onCollapseToggle}
-          className="absolute right-4 top-6 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/60 transition-all hover:bg-white/20 hover:text-white"
-        >
-          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-        </button>
-      )}
-
-      <nav className="relative mt-6 flex-1 overflow-y-auto space-y-1.5 px-3 pb-4">
+      <nav className="relative mt-6 flex-1 overflow-y-auto space-y-2 px-3 pb-4">
         {links.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
             onClick={onNavigate}
+            aria-label={link.label}
             className={({ isActive }) => cn(
-              'group relative flex items-center gap-3 overflow-hidden rounded-2xl px-3 py-3 text-sm font-medium transition-all duration-200',
-              collapsed && !mobile && 'justify-center px-0',
-              isActive
-                ? 'text-white'
-                : 'text-white/55 hover:bg-white/7 hover:text-white/85'
+              'group relative flex items-center gap-3 overflow-hidden rounded-[22px] px-3 py-3 text-sm font-medium transition-all duration-200',
+              !expanded && !mobile && 'justify-center px-0',
+              isActive ? 'text-white' : 'text-white/52 hover:bg-white/[0.06] hover:text-white/88'
             )}
           >
             {({ isActive }) => (
@@ -116,13 +102,13 @@ function SidebarBody({ collapsed, onCollapseToggle, onNavigate, mobile = false }
                 {isActive && (
                   <motion.div
                     layoutId="activeNav"
-                    className="absolute inset-0 rounded-2xl border border-cyan-400/25 bg-gradient-to-r from-cyan-500/28 via-blue-500/18 to-emerald-400/16"
+                    className="absolute inset-0 rounded-[22px] border border-cyan-400/25 bg-gradient-to-r from-cyan-500/24 via-sky-500/10 to-emerald-400/18"
                     transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                   />
                 )}
                 <link.icon className={cn('relative z-10 h-5 w-5 shrink-0', isActive && 'text-cyan-300')} />
                 <AnimatePresence>
-                  {(!collapsed || mobile) && (
+                  {(expanded || mobile) && (
                     <motion.span
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -140,15 +126,16 @@ function SidebarBody({ collapsed, onCollapseToggle, onNavigate, mobile = false }
       </nav>
 
       <div className="relative border-t border-white/8 p-3">
-        <div className={cn('mb-3 rounded-2xl border border-white/10 bg-white/5 p-3', collapsed && !mobile && 'px-0 text-center')}>
-          <div className="text-[11px] uppercase tracking-[0.18em] text-white/35">Signed in</div>
-          {(!collapsed || mobile) ? (
+        <div className={cn('mb-3 rounded-[22px] border border-white/10 bg-white/[0.04] p-3', !expanded && !mobile && 'px-0 text-center')}>
+          {expanded || mobile ? (
             <>
-              <div className="mt-1 truncate text-sm font-semibold text-white">{role === 'admin' ? 'Administrator' : 'Team member'}</div>
-              <div className="truncate text-xs text-white/45">{user?.email}</div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-white/35">{role}</div>
+              <div className="mt-1 truncate text-sm font-semibold text-white">{user?.email}</div>
             </>
           ) : (
-            <div className="mt-2 text-xs font-semibold text-white/65">{role === 'admin' ? 'AD' : 'EM'}</div>
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-xs font-semibold text-white/72">
+              {initials}
+            </div>
           )}
         </div>
         <motion.button
@@ -159,13 +146,13 @@ function SidebarBody({ collapsed, onCollapseToggle, onNavigate, mobile = false }
             onNavigate?.();
           }}
           className={cn(
-            'flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium text-white/45 transition-all hover:bg-rose-500/12 hover:text-rose-300',
-            collapsed && !mobile && 'justify-center px-0'
+            'flex w-full items-center gap-3 rounded-[22px] px-3 py-3 text-sm font-medium text-white/42 transition-all hover:bg-rose-500/10 hover:text-rose-300',
+            !expanded && !mobile && 'justify-center px-0'
           )}
         >
           <LogOut className="h-5 w-5 shrink-0" />
           <AnimatePresence>
-            {(!collapsed || mobile) && (
+            {(expanded || mobile) && (
               <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 Logout
               </motion.span>
@@ -178,19 +165,21 @@ function SidebarBody({ collapsed, onCollapseToggle, onNavigate, mobile = false }
 }
 
 export const Sidebar = ({
-  collapsed,
   mobileOpen,
-  onCollapseToggle,
   onMobileClose,
 }: SidebarProps) => {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <>
       <motion.aside
-        animate={{ width: collapsed ? 92 : 288 }}
+        animate={{ width: expanded ? 280 : 92 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
         className="hidden min-h-screen p-4 md:block"
       >
-        <SidebarBody collapsed={collapsed} onCollapseToggle={onCollapseToggle} />
+        <SidebarBody expanded={expanded} />
       </motion.aside>
 
       <AnimatePresence>
@@ -210,12 +199,7 @@ export const Sidebar = ({
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="fixed inset-y-0 left-0 z-50 w-[292px] p-3 md:hidden"
             >
-              <SidebarBody
-                collapsed={false}
-                mobile
-                onCollapseToggle={onCollapseToggle}
-                onNavigate={onMobileClose}
-              />
+              <SidebarBody expanded mobile onNavigate={onMobileClose} />
             </motion.aside>
           </>
         )}

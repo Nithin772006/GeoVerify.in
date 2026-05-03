@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -16,18 +15,33 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Download, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
+import { Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Skeleton } from '../../components/common/Skeleton';
 import { GlassPanel } from '../../components/ui/GlassPanel';
 import { PageHeader } from '../../components/ui/PageHeader';
-import { StatCard } from '../../components/cards/StatCard';
 import { useRealtimeInvalidation } from '../../hooks/useRealtimeInvalidation';
 import { downloadCsv } from '../../lib/csv';
 import { getReportsData } from '../../services/modules/admin';
 
-const PIE_COLORS = ['#38bdf8', '#10b981', '#f59e0b'];
+const PIE_COLORS = ['#00d4ff', '#00b896', '#f6c453'];
+const GRID_COLOR = 'rgba(255,255,255,0.08)';
+const TOOLTIP_STYLE = {
+  backgroundColor: 'rgba(7, 13, 24, 0.94)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: '20px',
+  color: '#fff',
+};
+
+function ReportPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm">
+      <span className="text-white/38">{label}</span>{' '}
+      <span className="font-semibold text-white">{value}</span>
+    </div>
+  );
+}
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState(30);
@@ -66,12 +80,11 @@ export default function Reports() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Analytics Studio"
-        title="Decode attendance patterns"
-        description="Analyze attendance trends, late arrival density, and leave distribution across the selected time window."
+        title="Reports"
+        description="Chart-first attendance analytics."
         stats={[
           { label: 'Window', value: `${dateRange} days` },
-          { label: 'Records', value: `${data?.totalAttendance ?? 0}` },
+          { label: 'Logs', value: `${data?.totalAttendance ?? 0}` },
         ]}
         actions={
           <>
@@ -82,54 +95,65 @@ export default function Reports() {
             </select>
             <button type="button" onClick={exportCsv} className="glass-button-primary">
               <Download className="h-4 w-4" />
-              Export CSV
+              Export
             </button>
           </>
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Attendance Rate" value={`${data?.attendanceRate ?? 0}%`} icon={TrendingUp} color="green" delay={0.04} />
-        <StatCard title="Late Rate" value={`${data?.lateRate ?? 0}%`} icon={PieChartIcon} color="amber" delay={0.1} />
-        <StatCard title="Approved Leaves" value={data?.approvedLeaves ?? 0} icon={Download} color="blue" delay={0.16} />
-        <StatCard title="Total Logs" value={data?.totalAttendance ?? 0} icon={TrendingUp} color="blue" delay={0.22} />
-      </div>
+      <GlassPanel glow="blue" contentClassName="p-5">
+        <div className="flex flex-wrap gap-3">
+          <ReportPill label="Attendance" value={`${data?.attendanceRate ?? 0}%`} />
+          <ReportPill label="Late" value={`${data?.lateRate ?? 0}%`} />
+          <ReportPill label="Approved leaves" value={`${data?.approvedLeaves ?? 0}`} />
+          <ReportPill label="Logs" value={`${data?.totalAttendance ?? 0}`} />
+        </div>
+      </GlassPanel>
 
-      <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.45fr_0.55fr]">
         <GlassPanel glow="blue" contentClassName="p-6">
-          <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">Daily attendance trend</h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">
-            Follow check-in volume across the selected window and compare it against late arrivals.
-          </p>
+          <div className="mb-6">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-white/30">Attendance Trend</div>
+            <div className="mt-2 text-2xl font-semibold text-white">Check-ins vs late arrivals</div>
+          </div>
 
-          <div className="mt-6 h-80">
+          <div className="h-[28rem]">
             {isLoading ? (
               <Skeleton className="h-full rounded-[28px]" />
             ) : data?.attendanceTrend.length ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.attendanceTrend}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.18} />
-                  <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'dd MMM')} />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip labelFormatter={(value) => format(new Date(value), 'EEE, MMM d')} />
-                  <Legend />
-                  <Line type="monotone" dataKey="checkedIn" stroke="#38bdf8" strokeWidth={3} dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="late" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4 }} />
-                </LineChart>
+                <AreaChart data={data.attendanceTrend}>
+                  <defs>
+                    <linearGradient id="reportsAttendance" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#00d4ff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#00d4ff" stopOpacity="0" />
+                    </linearGradient>
+                    <linearGradient id="reportsLate" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#f6c453" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="#f6c453" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 6" vertical={false} />
+                  <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'dd MMM')} tick={{ fill: 'rgba(255,255,255,0.45)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fill: 'rgba(255,255,255,0.45)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} labelFormatter={(value) => format(new Date(value), 'EEE, MMM d')} />
+                  <Area type="monotone" dataKey="checkedIn" stroke="#00d4ff" strokeWidth={3} fill="url(#reportsAttendance)" />
+                  <Area type="monotone" dataKey="late" stroke="#f6c453" strokeWidth={2.4} fill="url(#reportsLate)" />
+                </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyState title="No attendance analytics yet" description="Attendance trends will render after the first set of check-ins." />
+              <EmptyState title="No analytics yet" description="Trends appear after attendance starts flowing in." />
             )}
           </div>
         </GlassPanel>
 
         <GlassPanel glow="emerald" contentClassName="p-6">
-          <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">Leave distribution</h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">
-            See how requests are split between pending, approved, and rejected states.
-          </p>
+          <div className="mb-6">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-white/30">Leave Split</div>
+            <div className="mt-2 text-2xl font-semibold text-white">Queue balance</div>
+          </div>
 
-          <div className="mt-6 h-80">
+          <div className="h-[28rem]">
             {isLoading ? (
               <Skeleton className="h-full rounded-[28px]" />
             ) : data?.leaveDistribution.some((item) => item.value > 0) ? (
@@ -138,49 +162,55 @@ export default function Reports() {
                   <Pie
                     data={data.leaveDistribution}
                     dataKey="value"
-                    innerRadius={68}
-                    outerRadius={96}
+                    innerRadius={82}
+                    outerRadius={120}
                     paddingAngle={4}
-                    isAnimationActive
                   >
                     {data.leaveDistribution.map((entry, index) => (
                       <Cell key={entry.name} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
-                  <Legend />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyState title="No leave distribution yet" description="Once leave requests start moving through the workflow, the split will appear here." />
+              <EmptyState title="No leave split" description="Leave distribution appears once requests are active." />
             )}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(data?.leaveDistribution ?? []).map((item, index) => (
+              <div key={item.name} className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1 text-xs text-white/62">
+                <span className="mr-2 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
+                {item.name}: {item.value}
+              </div>
+            ))}
           </div>
         </GlassPanel>
       </div>
 
       <GlassPanel glow="amber" contentClassName="p-6">
-        <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">Late arrival density by department</h2>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">
-          Compare departments with heavier late patterns against their on-time attendance volume.
-        </p>
+        <div className="mb-6">
+          <div className="text-[11px] uppercase tracking-[0.24em] text-white/30">Departments</div>
+          <div className="mt-2 text-2xl font-semibold text-white">Late density by team</div>
+        </div>
 
-        <div className="mt-6 h-80">
+        <div className="h-[26rem]">
           {isLoading ? (
             <Skeleton className="h-full rounded-[28px]" />
           ) : data?.lateByDepartment.length ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.lateByDepartment}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.18} />
-                <XAxis dataKey="department" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="onTime" fill="#10b981" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="late" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+                <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 6" vertical={false} />
+                <XAxis dataKey="department" tick={{ fill: 'rgba(255,255,255,0.45)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fill: 'rgba(255,255,255,0.45)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Bar dataKey="onTime" fill="#00b896" radius={[10, 10, 0, 0]} />
+                <Bar dataKey="late" fill="#f6c453" radius={[10, 10, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <EmptyState title="No department late analytics yet" description="Department-level late arrival reporting will appear after attendance records are available." />
+            <EmptyState title="No department data" description="Department analytics appear as attendance records grow." />
           )}
         </div>
       </GlassPanel>

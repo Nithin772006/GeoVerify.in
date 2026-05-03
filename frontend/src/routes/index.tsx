@@ -15,15 +15,16 @@ const Leave = lazy(() => import('../pages/leave/Leave'));
 const Holidays = lazy(() => import('../pages/holidays/Holidays'));
 const Reports = lazy(() => import('../pages/reports/Reports'));
 const Settings = lazy(() => import('../pages/settings/Settings'));
+const AuthCallback = lazy(() => import('../pages/auth/AuthCallback'));
 
 function RouteLoader() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
       <Background3D variant="auth" />
       <div className="absolute inset-0 bg-slate-950/72 backdrop-blur-sm" />
-      <div className="relative z-10 rounded-[30px] border border-white/10 bg-white/10 px-10 py-8 shadow-[0_25px_60px_rgba(15,23,42,0.32)] backdrop-blur-2xl">
+      <div className="relative z-10 rounded-[30px] border border-white/10 bg-white/[0.06] px-10 py-8 shadow-[0_25px_60px_rgba(15,23,42,0.32)] backdrop-blur-2xl">
         <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent" />
-        <p className="mt-4 text-sm font-medium text-white/75">Loading workspace module...</p>
+        <p className="mt-4 text-sm font-medium text-white/60">Loading module</p>
       </div>
     </div>
   );
@@ -134,7 +135,7 @@ export const AppRoutes = () => {
           />
         </Route>
 
-        <Route path="/" element={<Navigate to="/attendance" replace />} />
+        <Route path="/" element={<AuthCallback />} />
         <Route path="*" element={<Navigate to="/attendance" replace />} />
       </Routes>
     </Suspense>

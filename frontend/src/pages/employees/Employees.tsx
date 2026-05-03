@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit3, Plus, Search, ShieldCheck, Trash2, UserRoundCheck, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { EmptyState } from '../../components/common/EmptyState';
 import { Modal } from '../../components/common/Modal';
 import { Pagination } from '../../components/common/Pagination';
 import { Skeleton } from '../../components/common/Skeleton';
@@ -31,6 +32,104 @@ const createInitialForm = (): EmployeeFormValues & { password: string } => ({
   phone: '',
   status: 'active',
 });
+
+function SummaryCard({
+  label,
+  value,
+  icon: Icon,
+  tint,
+}: {
+  label: string;
+  value: number;
+  icon: typeof Users;
+  tint: string;
+}) {
+  return (
+    <GlassPanel glow="blue" contentClassName="p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.22em] text-white/30">{label}</div>
+          <div className="mt-2 text-3xl font-semibold text-white">{value}</div>
+        </div>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.04] ${tint}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </GlassPanel>
+  );
+}
+
+function EmployeeCard({
+  employee,
+  onEdit,
+  onDelete,
+}: {
+  employee: Employee;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const initials = employee.name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const roleRing = employee.role === 'admin' ? 'border-cyan-400/30 shadow-[0_0_30px_rgba(0,212,255,0.12)]' : 'border-emerald-400/25 shadow-[0_0_30px_rgba(0,184,150,0.12)]';
+
+  return (
+    <GlassPanel glow={employee.role === 'admin' ? 'blue' : 'emerald'} contentClassName="p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border bg-white/[0.04] text-lg font-semibold text-white ${roleRing}`}>
+            {initials}
+          </div>
+          <div>
+            <div className="text-lg font-semibold text-white">{employee.name}</div>
+            <div className="text-sm text-white/46">{employee.email}</div>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-2xl border border-white/10 bg-white/[0.04] p-2 text-white/55 transition hover:bg-white/[0.08] hover:text-cyan-200"
+            aria-label={`Edit ${employee.name}`}
+          >
+            <Edit3 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded-2xl border border-white/10 bg-white/[0.04] p-2 text-white/55 transition hover:bg-white/[0.08] hover:text-rose-300"
+            aria-label={`Delete ${employee.name}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <StatusBadge label={employee.role} />
+        <StatusBadge label={employee.status || 'active'} />
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-[20px] border border-white/8 bg-black/10 p-4">
+          <div className="text-[11px] uppercase tracking-[0.22em] text-white/28">Department</div>
+          <div className="mt-2 font-semibold text-white">{employee.department || 'General'}</div>
+          <div className="mt-1 text-sm text-white/42">{employee.job_title || 'No job title'}</div>
+        </div>
+        <div className="rounded-[20px] border border-white/8 bg-black/10 p-4">
+          <div className="text-[11px] uppercase tracking-[0.22em] text-white/28">Contact</div>
+          <div className="mt-2 font-semibold text-white">{employee.phone || 'No phone set'}</div>
+          <div className="mt-1 text-sm text-white/42">Added {new Date(employee.created_at).toLocaleDateString()}</div>
+        </div>
+      </div>
+    </GlassPanel>
+  );
+}
 
 export default function Employees() {
   const queryClient = useQueryClient();
@@ -165,12 +264,11 @@ export default function Employees() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="People Grid"
-        title="Manage your workforce roster"
-        description="Create employee accounts, update role assignments, and keep the directory clean with searchable, paginated data."
+        title="Employees"
+        description="Searchable employee card grid with role and status controls."
         stats={[
           { label: 'Total', value: `${totalEmployees}` },
-          { label: 'Visible admins', value: `${adminCount}` },
+          { label: 'Admins', value: `${adminCount}` },
         ]}
         actions={
           <button type="button" onClick={openCreateModal} className="glass-button-primary">
@@ -180,38 +278,17 @@ export default function Employees() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 xl:grid-cols-4">
-        <GlassPanel glow="blue" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">Visible employees</div>
-          <div className="mt-2 flex items-center gap-3 text-3xl font-semibold text-slate-950 dark:text-white">
-            <Users className="h-7 w-7 text-cyan-600 dark:text-cyan-300" />
-            {employees.length}
-          </div>
-        </GlassPanel>
-        <GlassPanel glow="amber" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">Admins on this page</div>
-          <div className="mt-2 flex items-center gap-3 text-3xl font-semibold text-slate-950 dark:text-white">
-            <ShieldCheck className="h-7 w-7 text-amber-500 dark:text-amber-300" />
-            {adminCount}
-          </div>
-        </GlassPanel>
-        <GlassPanel glow="emerald" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">Active on this page</div>
-          <div className="mt-2 flex items-center gap-3 text-3xl font-semibold text-slate-950 dark:text-white">
-            <UserRoundCheck className="h-7 w-7 text-emerald-500 dark:text-emerald-300" />
-            {activeCount}
-          </div>
-        </GlassPanel>
-        <GlassPanel glow="blue" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">Departments</div>
-          <div className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{departments.length}</div>
-        </GlassPanel>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard label="Visible" value={employees.length} icon={Users} tint="text-cyan-200" />
+        <SummaryCard label="Admins" value={adminCount} icon={ShieldCheck} tint="text-amber-300" />
+        <SummaryCard label="Active" value={activeCount} icon={UserRoundCheck} tint="text-emerald-300" />
+        <SummaryCard label="Teams" value={departments.length} icon={Users} tint="text-white" />
       </div>
 
       <GlassPanel glow="blue" contentClassName="p-5">
         <div className="grid gap-4 xl:grid-cols-[1.3fr_repeat(3,minmax(0,0.6fr))]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34" />
             <input
               type="search"
               placeholder="Search by name, email, department, or title"
@@ -244,106 +321,41 @@ export default function Employees() {
         </div>
       </GlassPanel>
 
-      <GlassPanel glow="emerald" contentClassName="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-white/55 bg-white/60 dark:border-white/8 dark:bg-white/5">
-              <tr className="text-slate-500 dark:text-slate-300/45">
-                <th className="px-6 py-4 font-semibold">Employee</th>
-                <th className="px-6 py-4 font-semibold">Department</th>
-                <th className="px-6 py-4 font-semibold">Role</th>
-                <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold">Contact</th>
-                <th className="px-6 py-4 text-right font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/45 dark:divide-white/6">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4" colSpan={6}>
-                      <Skeleton className="h-14 w-full rounded-2xl" />
-                    </td>
-                  </tr>
-                ))
-              ) : employees.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12">
-                    <div className="text-center text-sm text-slate-500 dark:text-slate-300/55">
-                      No employees match the current filters.
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                employees.map((employee) => (
-                  <tr key={employee.id} className="transition hover:bg-white/35 dark:hover:bg-white/4">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-950 dark:text-white">{employee.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-300/45">{employee.email}</div>
-                      <div className="mt-1 text-xs text-slate-500 dark:text-slate-300/45">
-                        Added {new Date(employee.created_at).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-800 dark:text-slate-100">
-                        {employee.department || 'General'}
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-300/45">
-                        {employee.job_title || 'No job title'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge label={employee.role} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge label={employee.status || 'active'} />
-                    </td>
-                    <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-300/55">
-                      {employee.phone || 'No phone set'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(employee)}
-                          className="rounded-2xl border border-white/55 bg-white/72 p-2 text-slate-500 transition hover:text-cyan-600 dark:border-white/10 dark:bg-white/5 dark:text-white/55 dark:hover:text-cyan-300"
-                          aria-label={`Edit ${employee.name}`}
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm(`Delete ${employee.name}? This removes their auth account too.`)) {
-                              deleteEmployeeMutation.mutate(employee.id);
-                            }
-                          }}
-                          disabled={deleteEmployeeMutation.isPending}
-                          className="rounded-2xl border border-white/55 bg-white/72 p-2 text-slate-500 transition hover:text-rose-600 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-white/55 dark:hover:text-rose-300"
-                          aria-label={`Delete ${employee.name}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {isLoading ? (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-72 rounded-[28px]" />
+          ))}
         </div>
-      </GlassPanel>
+      ) : employees.length === 0 ? (
+        <EmptyState title="No employees found" description="Try adjusting the current filters." />
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {employees.map((employee) => (
+            <EmployeeCard
+              key={employee.id}
+              employee={employee}
+              onEdit={() => openEditModal(employee)}
+              onDelete={() => {
+                if (window.confirm(`Delete ${employee.name}? This removes their auth account too.`)) {
+                  deleteEmployeeMutation.mutate(employee.id);
+                }
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       <Pagination page={employeesPage?.page ?? 1} totalPages={employeesPage?.totalPages ?? 1} onPageChange={setPage} />
 
       <Modal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingEmployee ? 'Edit employee profile' : 'Add new employee'}
+        title={editingEmployee ? 'Edit employee' : 'Add employee'}
         description={
           editingEmployee
-            ? 'Update directory details, role assignments, and activation state.'
-            : 'Create a new auth account and seed the employee record in Supabase.'
+            ? 'Update employee details, access level, and active state.'
+            : 'Create a new employee account.'
         }
       >
         <form onSubmit={handleSubmit} className="grid gap-5 lg:grid-cols-2">
@@ -363,7 +375,7 @@ export default function Employees() {
 
           <div>
             <label className="glass-label" htmlFor="employee-email">
-              Email address
+              Email
             </label>
             <input
               id="employee-email"
@@ -377,7 +389,7 @@ export default function Employees() {
 
           <div>
             <label className="glass-label" htmlFor="employee-password">
-              {editingEmployee ? 'Reset password (optional)' : 'Temporary password'}
+              {editingEmployee ? 'Reset password' : 'Temporary password'}
             </label>
             <input
               id="employee-password"
@@ -388,9 +400,7 @@ export default function Employees() {
               className="glass-input"
             />
             <p className="glass-helper mt-2">
-              {editingEmployee
-                ? 'Leave blank to keep the current password.'
-                : 'Share this securely with the employee after creation.'}
+              {editingEmployee ? 'Leave blank to keep the current password.' : 'Share securely after creation.'}
             </p>
           </div>
 

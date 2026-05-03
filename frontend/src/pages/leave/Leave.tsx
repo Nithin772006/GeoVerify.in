@@ -1,7 +1,7 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { CalendarDays, Check, Clock3, PlaneTakeoff, Search, X } from 'lucide-react';
+import { differenceInCalendarDays, format } from 'date-fns';
+import { Check, Clock3, PlaneTakeoff, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -19,9 +19,30 @@ import {
 import { supabase } from '../../services/supabase';
 import type { LeaveRequest } from '../../types/admin';
 
-export default function Leave() {
-  const { role } = useAuth();
-  return role === 'admin' ? <AdminLeave /> : <EmployeeLeave />;
+function LeaveSummaryTile({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: typeof Clock3;
+  tone: string;
+}) {
+  return (
+    <GlassPanel glow="blue" contentClassName="p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.22em] text-white/30">{label}</div>
+          <div className="mt-2 text-3xl font-semibold text-white">{value}</div>
+        </div>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.04] ${tone}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </GlassPanel>
+  );
 }
 
 function EmployeeLeave() {
@@ -96,30 +117,33 @@ function EmployeeLeave() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Leave Flow"
-        title="Plan and track your time away"
-        description="Create leave requests, monitor approvals, and keep your attendance timeline predictable."
+        title="My Leaves"
+        description="Leave request planner and history timeline."
         stats={[
           { label: 'Pending', value: `${summary.pending}` },
           { label: 'Approved', value: `${summary.approved}` },
         ]}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <LeaveSummaryTile label="Pending" value={summary.pending} icon={Clock3} tone="text-amber-300" />
+        <LeaveSummaryTile label="Approved" value={summary.approved} icon={Check} tone="text-emerald-300" />
+        <LeaveSummaryTile label="Rejected" value={summary.rejected} icon={X} tone="text-rose-300" />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <GlassPanel glow="blue" contentClassName="p-6">
-          <div className="flex items-start gap-4">
-            <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-600 dark:text-cyan-300">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-200">
               <PlaneTakeoff className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">Request leave</h2>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">
-                Pick your dates, add a short reason, and the request will land in the admin review queue.
-              </p>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-white/30">Planner</div>
+              <div className="mt-2 text-2xl font-semibold text-white">Request time away</div>
             </div>
           </div>
 
-          <form onSubmit={submitLeave} className="mt-6 space-y-4">
+          <form onSubmit={submitLeave} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <input
                 required
@@ -142,7 +166,7 @@ function EmployeeLeave() {
               value={form.reason}
               onChange={(event) => setForm({ ...form, reason: event.target.value })}
               className="glass-textarea"
-              placeholder="Reason for leave"
+              placeholder="Reason"
             />
             <button disabled={loading} type="submit" className="glass-button-primary w-full disabled:opacity-50">
               Submit request
@@ -151,59 +175,109 @@ function EmployeeLeave() {
         </GlassPanel>
 
         <GlassPanel glow="emerald" contentClassName="p-6">
-          <div className="flex items-center justify-between gap-4">
+          <div className="mb-6 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">My requests</h2>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">
-                Review your request history and cancel anything still pending.
-              </p>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-white/30">Timeline</div>
+              <div className="mt-2 text-2xl font-semibold text-white">History</div>
             </div>
-            <div className="rounded-2xl border border-white/55 bg-white/70 px-4 py-3 text-sm font-medium text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-white/80">
+            <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/48">
               {leaves?.length ?? 0} total
             </div>
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="space-y-4">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-28 rounded-[24px]" />)
             ) : leaves?.length === 0 ? (
-              <EmptyState title="No leave requests yet" description="Your submitted leave requests will appear here." />
+              <EmptyState title="No leave history" description="Your requests will appear here once submitted." />
             ) : (
-              (leaves ?? []).map((leave) => (
-                <motion.div
-                  key={leave.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-[24px] border border-white/55 bg-white/68 p-5 shadow-[0_15px_35px_rgba(148,163,184,0.14)] dark:border-white/10 dark:bg-white/5"
-                >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 font-semibold text-slate-950 dark:text-white">
-                        <CalendarDays className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
-                        {format(new Date(leave.start_date), 'MMM d')} - {format(new Date(leave.end_date), 'MMM d, yyyy')}
-                      </div>
-                      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">{leave.reason}</p>
-                    </div>
+              (leaves ?? []).map((leave, index) => {
+                const days = differenceInCalendarDays(new Date(leave.end_date), new Date(leave.start_date)) + 1;
 
-                    <div className="flex items-center gap-3">
-                      <StatusBadge label={leave.status} />
-                      {leave.status === 'Pending' ? (
-                        <button
-                          type="button"
-                          onClick={() => cancelLeave(leave.id)}
-                          className="rounded-full border border-rose-300/25 bg-rose-400/8 px-3 py-1 text-xs font-semibold text-rose-500 transition hover:bg-rose-400/14 dark:text-rose-300"
-                        >
-                          Cancel
-                        </button>
-                      ) : null}
+                return (
+                  <motion.div
+                    key={leave.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="relative pl-8"
+                  >
+                    <div className="absolute left-[11px] top-0 h-full w-px bg-white/8" />
+                    <div className="absolute left-0 top-6 h-6 w-6 rounded-full border border-cyan-400/22 bg-cyan-400/12 shadow-[0_0_20px_rgba(0,212,255,0.14)]" />
+                    <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-5">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <div className="text-lg font-semibold text-white">
+                              {format(new Date(leave.start_date), 'MMM d')} - {format(new Date(leave.end_date), 'MMM d, yyyy')}
+                            </div>
+                            <StatusBadge label={leave.status} />
+                          </div>
+                          <div className="mt-2 text-sm text-white/48">{days} day{days > 1 ? 's' : ''}</div>
+                          <div className="mt-4 text-sm leading-6 text-white/68">{leave.reason}</div>
+                        </div>
+
+                        {leave.status === 'Pending' ? (
+                          <button
+                            type="button"
+                            onClick={() => cancelLeave(leave.id)}
+                            className="rounded-full border border-rose-400/20 bg-rose-400/10 px-3 py-1 text-xs font-semibold text-rose-300 transition hover:bg-rose-400/14"
+                          >
+                            Cancel
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))
+                    {index === (leaves?.length ?? 0) - 1 ? null : <div className="h-2" />}
+                  </motion.div>
+                );
+              })
             )}
           </div>
         </GlassPanel>
       </div>
+    </div>
+  );
+}
+
+function LeaveCard({
+  leave,
+  onApprove,
+  onReject,
+}: {
+  leave: LeaveRequest;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-lg font-semibold text-white">{leave.employees?.name}</div>
+          <div className="text-sm text-white/42">{leave.employees?.email}</div>
+        </div>
+        <StatusBadge label={leave.status} />
+      </div>
+
+      <div className="mt-4 text-[11px] uppercase tracking-[0.22em] text-white/30">
+        {leave.employees?.department || 'General'}
+      </div>
+      <div className="mt-3 text-sm font-medium text-white/82">
+        {format(new Date(leave.start_date), 'MMM d')} - {format(new Date(leave.end_date), 'MMM d, yyyy')}
+      </div>
+      <div className="mt-3 text-sm leading-6 text-white/66">{leave.reason}</div>
+
+      {leave.status === 'Pending' ? (
+        <div className="mt-5 flex gap-2">
+          <button type="button" onClick={onApprove} className="glass-button-secondary flex-1 px-4 py-2 text-emerald-300">
+            <Check className="h-4 w-4" />
+            Approve
+          </button>
+          <button type="button" onClick={onReject} className="glass-button-secondary flex-1 px-4 py-2 text-rose-300">
+            <X className="h-4 w-4" />
+            Reject
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -263,51 +337,41 @@ function AdminLeave() {
     };
   }, [leaves]);
 
+  const columns = useMemo(
+    () => [
+      { key: 'Pending' as const, count: summary.pending, accent: 'text-amber-300' },
+      { key: 'Approved' as const, count: summary.approved, accent: 'text-emerald-300' },
+      { key: 'Rejected' as const, count: summary.rejected, accent: 'text-rose-300' },
+    ],
+    [summary.approved, summary.pending, summary.rejected],
+  );
+
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Review Queue"
-        title="Resolve employee leave requests"
-        description="Filter by status, search the queue, and approve or reject leave requests with optimistic updates."
+        title="Leave Requests"
+        description="Kanban review for pending, approved, and rejected leave requests."
         stats={[
           { label: 'Pending', value: `${summary.pending}` },
-          { label: 'Visible requests', value: `${leaves.length}` },
+          { label: 'Visible', value: `${leaves.length}` },
         ]}
       />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <GlassPanel glow="amber" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">Pending</div>
-          <div className="mt-2 flex items-center gap-3 text-3xl font-semibold text-slate-950 dark:text-white">
-            <Clock3 className="h-7 w-7 text-amber-500 dark:text-amber-300" />
-            {summary.pending}
-          </div>
-        </GlassPanel>
-        <GlassPanel glow="emerald" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">Approved</div>
-          <div className="mt-2 flex items-center gap-3 text-3xl font-semibold text-slate-950 dark:text-white">
-            <Check className="h-7 w-7 text-emerald-500 dark:text-emerald-300" />
-            {summary.approved}
-          </div>
-        </GlassPanel>
-        <GlassPanel glow="rose" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">Rejected</div>
-          <div className="mt-2 flex items-center gap-3 text-3xl font-semibold text-slate-950 dark:text-white">
-            <X className="h-7 w-7 text-rose-500 dark:text-rose-300" />
-            {summary.rejected}
-          </div>
-        </GlassPanel>
+        <LeaveSummaryTile label="Pending" value={summary.pending} icon={Clock3} tone="text-amber-300" />
+        <LeaveSummaryTile label="Approved" value={summary.approved} icon={Check} tone="text-emerald-300" />
+        <LeaveSummaryTile label="Rejected" value={summary.rejected} icon={X} tone="text-rose-300" />
       </div>
 
       <GlassPanel glow="blue" contentClassName="p-5">
         <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34" />
             <input
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search employee or leave reason"
+              placeholder="Search employee or reason"
               className="glass-input pl-10"
             />
           </div>
@@ -321,68 +385,44 @@ function AdminLeave() {
         </div>
       </GlassPanel>
 
-      <GlassPanel glow="blue" contentClassName="p-6">
-        <div className="space-y-4">
-          {isLoading ? (
-            Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32 rounded-[24px]" />)
-          ) : leaves.length === 0 ? (
-            <EmptyState
-              title="No leave requests found"
-              description="Try changing the status filter or search query."
-            />
-          ) : (
-            leaves.map((leave) => (
-              <div
-                key={leave.id}
-                className="rounded-[24px] border border-white/55 bg-white/68 p-5 shadow-[0_15px_35px_rgba(148,163,184,0.14)] dark:border-white/10 dark:bg-white/5"
-              >
-                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                  <div>
-                    <div className="text-lg font-semibold text-slate-950 dark:text-white">
-                      {leave.employees?.name}
-                    </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-300/45">
-                      {leave.employees?.email}
-                    </div>
-                    <div className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300/45">
-                      {leave.employees?.department || 'General'}
-                    </div>
-                    <div className="mt-3 text-sm text-slate-700 dark:text-slate-200/82">
-                      {format(new Date(leave.start_date), 'MMM d')} - {format(new Date(leave.end_date), 'MMM d, yyyy')}
-                    </div>
-                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/62">{leave.reason}</p>
-                  </div>
+      <div className="grid gap-6 xl:grid-cols-3">
+        {columns.map((column) => {
+          const columnItems = leaves.filter((leave) => leave.status === column.key);
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <StatusBadge label={leave.status} />
-
-                    {leave.status === 'Pending' ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => statusMutation.mutate({ leaveId: leave.id, status: 'Approved' })}
-                          className="glass-button-secondary px-4 py-2 text-emerald-600 dark:text-emerald-300"
-                        >
-                          <Check className="h-4 w-4" />
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => statusMutation.mutate({ leaveId: leave.id, status: 'Rejected' })}
-                          className="glass-button-secondary px-4 py-2 text-rose-600 dark:text-rose-300"
-                        >
-                          <X className="h-4 w-4" />
-                          Reject
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
+          return (
+            <GlassPanel key={column.key} glow="blue" contentClassName="p-5">
+              <div className="mb-5 flex items-center justify-between">
+                <div className={`text-lg font-semibold ${column.accent}`}>{column.key}</div>
+                <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/48">
+                  {column.count}
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </GlassPanel>
+
+              <div className="space-y-4">
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-48 rounded-[24px]" />)
+                ) : columnItems.length === 0 ? (
+                  <EmptyState title={`No ${column.key.toLowerCase()} items`} description="This column is clear." />
+                ) : (
+                  columnItems.map((leave) => (
+                    <LeaveCard
+                      key={leave.id}
+                      leave={leave}
+                      onApprove={() => statusMutation.mutate({ leaveId: leave.id, status: 'Approved' })}
+                      onReject={() => statusMutation.mutate({ leaveId: leave.id, status: 'Rejected' })}
+                    />
+                  ))
+                )}
+              </div>
+            </GlassPanel>
+          );
+        })}
+      </div>
     </div>
   );
+}
+
+export default function Leave() {
+  const { role } = useAuth();
+  return role === 'admin' ? <AdminLeave /> : <EmployeeLeave />;
 }

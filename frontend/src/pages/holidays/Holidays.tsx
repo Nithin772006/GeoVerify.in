@@ -25,6 +25,15 @@ import type { Holiday } from '../../types/admin';
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+function SummaryTile({ label, value }: { label: string; value: number }) {
+  return (
+    <GlassPanel glow="blue" contentClassName="p-5">
+      <div className="text-[11px] uppercase tracking-[0.22em] text-white/30">{label}</div>
+      <div className="mt-2 text-3xl font-semibold text-white">{value}</div>
+    </GlassPanel>
+  );
+}
+
 export default function Holidays() {
   const queryClient = useQueryClient();
   const [visibleMonth, setVisibleMonth] = useState(startOfMonth(new Date()));
@@ -73,9 +82,9 @@ export default function Holidays() {
   const monthPadding = Array.from({ length: getDay(startOfMonth(visibleMonth)) });
 
   const holidaysThisMonth = holidays.filter((holiday) => isSameMonth(parseISO(holiday.date), visibleMonth));
-  const upcomingHolidays = holidays
-    .filter((holiday) => parseISO(holiday.date) >= startOfMonth(new Date()))
-    .slice(0, 6);
+  const visibleMonthHolidays = holidays
+    .filter((holiday) => isSameMonth(parseISO(holiday.date), visibleMonth))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   const totals = useMemo(
     () => ({
@@ -92,12 +101,11 @@ export default function Holidays() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Holiday Planner"
-        title="Maintain the official holiday calendar"
-        description="Add or remove holidays, highlight the calendar view, and keep the team aligned on upcoming non-working days."
+        title="Holidays"
+        description="Calendar-first holiday management."
         stats={[
+          { label: 'Month', value: format(visibleMonth, 'MMMM yyyy') },
           { label: 'Total', value: `${totals.total}` },
-          { label: 'This month', value: `${totals.thisMonth}` },
         ]}
         actions={
           <button type="button" onClick={() => setIsModalOpen(true)} className="glass-button-primary">
@@ -108,30 +116,17 @@ export default function Holidays() {
       />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <GlassPanel glow="blue" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">Total holidays</div>
-          <div className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{totals.total}</div>
-        </GlassPanel>
-        <GlassPanel glow="emerald" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">This year</div>
-          <div className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{totals.thisYear}</div>
-        </GlassPanel>
-        <GlassPanel glow="amber" contentClassName="p-5">
-          <div className="text-sm text-slate-500 dark:text-slate-300/45">Upcoming</div>
-          <div className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{upcomingHolidays.length}</div>
-        </GlassPanel>
+        <SummaryTile label="Total" value={totals.total} />
+        <SummaryTile label="This year" value={totals.thisYear} />
+        <SummaryTile label="This month" value={totals.thisMonth} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         <GlassPanel glow="blue" contentClassName="p-6">
-          <div className="flex items-center justify-between gap-3">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-300/45">
-                Calendar View
-              </div>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
-                {format(visibleMonth, 'MMMM yyyy')}
-              </h2>
+              <div className="text-[11px] uppercase tracking-[0.22em] text-white/30">Calendar</div>
+              <div className="mt-2 text-2xl font-semibold text-white">{format(visibleMonth, 'MMMM yyyy')}</div>
             </div>
 
             <div className="flex gap-2">
@@ -144,15 +139,15 @@ export default function Holidays() {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-7 gap-3">
             {WEEK_DAYS.map((day) => (
-              <div key={day} className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-300/45">
+              <div key={day} className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/30">
                 {day}
               </div>
             ))}
 
             {monthPadding.map((_, index) => (
-              <div key={`empty-${index}`} className="h-24 rounded-[24px] border border-dashed border-white/35 dark:border-white/8" />
+              <div key={`empty-${index}`} className="min-h-28 rounded-[24px] border border-dashed border-white/8 bg-white/[0.02]" />
             ))}
 
             {daysInMonth.map((day) => {
@@ -162,23 +157,33 @@ export default function Holidays() {
               return (
                 <div
                   key={day.toISOString()}
-                  className={`min-h-24 rounded-[24px] border p-3 transition ${
+                  className={`group min-h-28 rounded-[24px] border p-3 transition ${
                     holiday
-                      ? 'border-cyan-300/50 bg-cyan-400/12 shadow-[0_18px_40px_rgba(14,165,233,0.16)] dark:border-cyan-400/25 dark:bg-cyan-400/10'
-                      : 'border-white/55 bg-white/68 dark:border-white/10 dark:bg-white/5'
-                  }`}
+                      ? 'border-cyan-400/22 bg-cyan-400/10 shadow-[0_18px_40px_rgba(0,212,255,0.12)]'
+                      : 'border-white/10 bg-white/[0.04]'
+                  } ${isToday ? 'ring-1 ring-white/18' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className={`text-sm font-semibold ${isToday ? 'text-cyan-600 dark:text-cyan-300' : 'text-slate-900 dark:text-white'}`}>
+                    <span className={`text-sm font-semibold ${isToday ? 'text-cyan-200' : 'text-white'}`}>
                       {format(day, 'd')}
                     </span>
-                    {holiday ? <CalendarDays className="h-4 w-4 text-cyan-600 dark:text-cyan-300" /> : null}
+                    {holiday ? <CalendarDays className="h-4 w-4 text-cyan-200" /> : null}
                   </div>
 
                   {holiday ? (
-                    <div className="mt-3 text-sm font-medium text-slate-900 dark:text-white">{holiday.name}</div>
+                    <div className="mt-4 flex h-[calc(100%-2rem)] flex-col justify-between">
+                      <div className="text-sm font-medium text-white">{holiday.name}</div>
+                      <button
+                        type="button"
+                        onClick={() => deleteHolidayMutation.mutate(holiday.id)}
+                        className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/54 transition hover:text-rose-300"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remove
+                      </button>
+                    </div>
                   ) : (
-                    <div className="mt-6 text-xs text-slate-400 dark:text-slate-500">No holiday</div>
+                    <div className="mt-12 h-2 w-10 rounded-full bg-white/[0.05]" />
                   )}
                 </div>
               );
@@ -187,27 +192,30 @@ export default function Holidays() {
         </GlassPanel>
 
         <GlassPanel glow="emerald" contentClassName="p-6">
-          <div className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-300/45">
-            Upcoming Holidays
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
-            Keep the team calendar synchronized
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.22em] text-white/30">Agenda</div>
+              <div className="mt-2 text-2xl font-semibold text-white">{format(visibleMonth, 'MMMM')}</div>
+            </div>
+            <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/48">
+              {visibleMonthHolidays.length} items
+            </div>
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="space-y-4">
             {isLoading ? (
               Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-24 rounded-[24px]" />)
-            ) : holidays.length === 0 ? (
-              <EmptyState title="No holidays configured" description="Add your first holiday to populate the calendar." />
+            ) : visibleMonthHolidays.length === 0 ? (
+              <EmptyState title="No holidays this month" description="Add one to highlight it on the calendar." />
             ) : (
-              upcomingHolidays.map((holiday: Holiday) => (
+              visibleMonthHolidays.map((holiday: Holiday) => (
                 <div
                   key={holiday.id}
-                  className="flex items-center justify-between gap-4 rounded-[24px] border border-white/55 bg-white/70 px-4 py-4 dark:border-white/10 dark:bg-white/5"
+                  className="flex items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-white/[0.04] px-4 py-4"
                 >
                   <div>
-                    <div className="font-semibold text-slate-950 dark:text-white">{holiday.name}</div>
-                    <div className="text-sm text-slate-500 dark:text-slate-300/55">
+                    <div className="font-semibold text-white">{holiday.name}</div>
+                    <div className="text-sm text-white/48">
                       {format(parseISO(holiday.date), 'EEE, MMM d, yyyy')}
                     </div>
                   </div>
@@ -215,7 +223,7 @@ export default function Holidays() {
                   <button
                     type="button"
                     onClick={() => deleteHolidayMutation.mutate(holiday.id)}
-                    className="rounded-2xl border border-white/55 bg-white/72 p-2 text-slate-500 transition hover:text-rose-600 dark:border-white/10 dark:bg-white/5 dark:text-white/55 dark:hover:text-rose-300"
+                    className="rounded-2xl border border-white/10 bg-white/[0.04] p-2 text-white/55 transition hover:text-rose-300"
                     aria-label={`Delete ${holiday.name}`}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -231,7 +239,7 @@ export default function Holidays() {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Add holiday"
-        description="Create a holiday entry so it appears in the admin calendar and employee schedules."
+        description="Create a holiday entry for the shared calendar."
       >
         <form
           onSubmit={(event) => {

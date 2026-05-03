@@ -1,6 +1,7 @@
 import { useEffect, useId } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { Hint } from '../ui/Hint';
 
 interface DrawerProps {
   open: boolean;
@@ -55,22 +56,22 @@ export function Drawer({ open, title, description, onClose, children }: DrawerPr
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 flex h-full w-full max-w-xl flex-col border-l border-white/55 bg-white/90 shadow-[0_40px_120px_rgba(15,23,42,0.3)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/88"
+            className="relative z-10 flex h-full w-full max-w-xl flex-col border-l border-white/10 bg-[#09111d]/94 shadow-[0_40px_120px_rgba(0,0,0,0.45)] backdrop-blur-2xl"
           >
-            <div className="flex items-start justify-between gap-4 border-b border-white/45 px-6 py-5 dark:border-white/10">
+            <div className="flex items-start justify-between gap-4 border-b border-white/8 px-6 py-5">
               <div>
-                <h2 id={titleId} className="text-2xl font-semibold text-slate-950 dark:text-white">
-                  {title}
-                </h2>
-                {description ? (
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/65">{description}</p>
-                ) : null}
+                <div className="flex items-center gap-3">
+                  <h2 id={titleId} className="text-2xl font-semibold text-white">
+                    {title}
+                  </h2>
+                  {description ? <Hint content={description} label={`${title} help`} /> : null}
+                </div>
               </div>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-2xl border border-white/55 bg-white/70 p-2 text-slate-500 transition hover:text-slate-950 dark:border-white/10 dark:bg-white/5 dark:text-white/60 dark:hover:text-white"
+                className="rounded-2xl border border-white/10 bg-white/[0.05] p-2 text-white/60 transition hover:bg-white/[0.08] hover:text-white"
                 aria-label="Close drawer"
               >
                 <X className="h-4 w-4" />

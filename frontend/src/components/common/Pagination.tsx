@@ -12,10 +12,10 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/55 bg-white/70 px-4 py-3 dark:border-white/10 dark:bg-white/5">
-      <div className="text-sm text-slate-600 dark:text-slate-300/60">
-        Page <span className="font-semibold text-slate-950 dark:text-white">{page}</span> of{' '}
-        <span className="font-semibold text-slate-950 dark:text-white">{totalPages}</span>
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/[0.04] px-4 py-3">
+      <div className="text-sm text-white/52">
+        Page <span className="font-semibold text-white">{page}</span> of{' '}
+        <span className="font-semibold text-white">{totalPages}</span>
       </div>
 
       <div className="flex items-center gap-2">

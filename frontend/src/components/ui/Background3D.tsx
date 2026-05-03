@@ -67,7 +67,7 @@ function OrbitRing({
 }
 
 function Particles({ color }: { color: string }) {
-  const count = 260;
+  const count = 220;
   const mesh = useRef<THREE.Points>(null!);
 
   const positions = useMemo(() => {
@@ -99,16 +99,16 @@ function ReactiveRig({ variant }: { variant: 'auth' | 'app' }) {
   const palette =
     variant === 'auth'
       ? {
-          primary: '#38bdf8',
-          secondary: '#22d3ee',
-          accent: '#34d399',
-          tertiary: '#0f172a',
+          primary: '#00d4ff',
+          secondary: '#6ce6ff',
+          accent: '#00b896',
+          tertiary: '#08111d',
         }
       : {
-          primary: '#2dd4bf',
-          secondary: '#60a5fa',
-          accent: '#f59e0b',
-          tertiary: '#111827',
+          primary: '#00d4ff',
+          secondary: '#00b896',
+          accent: '#6ce6ff',
+          tertiary: '#09111c',
         };
 
   useFrame((state) => {
@@ -126,14 +126,14 @@ function ReactiveRig({ variant }: { variant: 'auth' | 'app' }) {
 
   return (
     <>
-      <pointLight ref={light} position={[0, 0, 2]} intensity={1.2} color={palette.primary} />
+      <pointLight ref={light} position={[0, 0, 2]} intensity={1.15} color={palette.primary} />
       <group ref={group}>
-        <AnimatedSphere position={[-3.4, 1.8, -2]} color={palette.primary} speed={0.45} distort={0.42} scale={1.35} />
-        <AnimatedSphere position={[3.1, -1.1, -3]} color={palette.accent} speed={0.3} distort={0.34} scale={0.92} />
-        <AnimatedSphere position={[0.4, -2.7, -4]} color={palette.secondary} speed={0.4} distort={0.5} scale={0.82} />
-        <AnimatedSphere position={[-1.8, -1.4, -5.3]} color={palette.tertiary} speed={0.58} distort={0.3} scale={0.58} />
-        <OrbitRing radius={2.9} color={palette.secondary} speed={0.18} rotation={[1.15, 0.4, 0]} />
-        <OrbitRing radius={4.25} color={palette.accent} speed={-0.12} rotation={[0.9, -0.25, 0]} />
+        <AnimatedSphere position={[-3.4, 1.8, -2]} color={palette.primary} speed={0.42} distort={0.42} scale={1.32} />
+        <AnimatedSphere position={[3.1, -1.1, -3]} color={palette.accent} speed={0.28} distort={0.34} scale={0.9} />
+        <AnimatedSphere position={[0.4, -2.7, -4]} color={palette.secondary} speed={0.36} distort={0.5} scale={0.78} />
+        <AnimatedSphere position={[-1.8, -1.4, -5.3]} color={palette.tertiary} speed={0.52} distort={0.3} scale={0.54} />
+        <OrbitRing radius={2.9} color={palette.secondary} speed={0.14} rotation={[1.15, 0.4, 0]} />
+        <OrbitRing radius={4.25} color={palette.accent} speed={-0.1} rotation={[0.9, -0.25, 0]} />
       </group>
       <Particles color={palette.secondary} />
     </>
@@ -150,10 +150,9 @@ export const Background3D = ({ variant = 'auth', className }: Background3DProps)
       >
         <ambientLight intensity={0.45} />
         <directionalLight position={[5, 4, 4]} intensity={0.9} />
-        <pointLight position={[-4, -4, 4]} intensity={0.35} color="#e0f2fe" />
+        <pointLight position={[-4, -4, 4]} intensity={0.3} color="#d9fbff" />
         <ReactiveRig variant={variant} />
       </Canvas>
     </div>
   );
 };
-
