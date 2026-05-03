@@ -97,7 +97,7 @@ function SidebarBody({ collapsed, onCollapseToggle, onNavigate, mobile = false }
         </button>
       )}
 
-      <nav className="relative mt-6 flex-1 space-y-1.5 px-3">
+      <nav className="relative mt-6 flex-1 overflow-y-auto space-y-1.5 px-3 pb-4">
         {links.map((link) => (
           <NavLink
             key={link.to}
