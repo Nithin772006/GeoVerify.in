@@ -1,0 +1,155 @@
+# 📱 GeoVerify — Android App Setup Guide
+
+Your React web app is now wrapped in a native Android shell using **Capacitor**. Here's everything you need to know.
+
+---
+
+## Architecture
+
+```mermaid
+graph LR
+    A[React + Vite Web App] -->|npm run build| B[dist/ folder]
+    B -->|npx cap sync| C[Android WebView Shell]
+    C -->|Android Studio| D[APK / AAB]
+```
+
+> [!NOTE]
+> Capacitor wraps your existing web app inside a native Android `WebView`. Your React code runs as-is — no rewrite needed. Native plugins (GPS, camera, haptics) are accessed via JavaScript bridges.
+
+---
+
+## What Was Added
+
+| File / Directory | Purpose |
+|---|---|
+| [capacitor.config.ts](file:///c:/Users/NITHIN/OneDrive/Attachments/Desktop/Folders/nithin/SoftwareConstruction/GoVerify.in/frontend/capacitor.config.ts) | Capacitor configuration (app ID, plugins, server settings) |
+| [native.ts](file:///c:/Users/NITHIN/OneDrive/Attachments/Desktop/Folders/nithin/SoftwareConstruction/GoVerify.in/frontend/src/native.ts) | Native bridge — initializes status bar, keyboard, back button |
+| [android/](file:///c:/Users/NITHIN/OneDrive/Attachments/Desktop/Folders/nithin/SoftwareConstruction/GoVerify.in/frontend/android/) | Full Android Studio project (Gradle, manifests, resources) |
+| Mobile CSS in [index.css](file:///c:/Users/NITHIN/OneDrive/Attachments/Desktop/Folders/nithin/SoftwareConstruction/GoVerify.in/frontend/src/index.css) | Safe area insets, touch targets, overscroll prevention |
+
+---
+
+## Prerequisites
+
+Before opening in Android Studio, make sure you have:
+
+1. **Android Studio** (latest stable) — [Download here](https://developer.android.com/studio)
+2. **Java JDK 17+** — Android Studio usually bundles this
+3. **Android SDK** — API level 33+ (installed via Android Studio SDK Manager)
+
+---
+
+## Quick Start Commands
+
+### One-Command Build & Open
+
+```bash
+cd frontend
+npm run android
+```
+
+This runs: `build → sync → open Android Studio`
+
+### Individual Steps
+
+```bash
+# 1. Build the web app
+npm run build
+
+# 2. Sync web assets + plugins to Android
+npm run cap:sync
+
+# 3. Open in Android Studio
+npm run cap:open
+```
+
+---
+
+## Building the APK / AAB
+
+### Debug APK (for testing)
+
+1. Open the `frontend/android` folder in Android Studio
+2. Wait for Gradle sync to complete (first time takes ~5 mins)
+3. Connect your Android phone via USB (enable Developer Options + USB Debugging)
+4. Click the green **▶ Run** button
+5. Select your device → app installs and launches!
+
+### Release AAB (for Play Store)
+
+1. In Android Studio: **Build → Generate Signed Bundle / APK**
+2. Choose **Android App Bundle**
+3. Create or select your signing keystore
+4. Build the release bundle
+
+---
+
+## Android Permissions Configured
+
+| Permission | Why |
+|---|---|
+| `INTERNET` | API calls to Supabase backend |
+| `ACCESS_FINE_LOCATION` | Geo-verified attendance check-in |
+| `ACCESS_COARSE_LOCATION` | Fallback location |
+| `ACCESS_NETWORK_STATE` | Connectivity checks |
+| `CAMERA` | Future: QR scan / selfie check-in |
+| `VIBRATE` | Haptic feedback on actions |
+
+---
+
+## Native Features Enabled
+
+| Plugin | Functionality |
+|---|---|
+| `@capacitor/status-bar` | Dark immersive status bar matching app theme |
+| `@capacitor/keyboard` | Pushes content up when keyboard opens |
+| `@capacitor/app` | Android back button → browser history navigation |
+| `@capacitor/splash-screen` | Dark branded splash during app load |
+| `@capacitor/geolocation` | Native GPS for attendance verification |
+| `@capacitor/haptics` | Tactile feedback on button presses |
+
+---
+
+## Development Workflow
+
+### Making Changes
+
+```bash
+# 1. Edit your React code normally
+# 2. Rebuild
+npm run build
+
+# 3. Sync changes to Android
+npx cap sync android
+
+# 4. Re-run in Android Studio (▶ button)
+```
+
+### Live Reload (during development)
+
+Edit `capacitor.config.ts` and add a server URL:
+
+```typescript
+server: {
+  url: 'http://YOUR_PC_IP:5173',  // Your Vite dev server
+  cleartext: true,
+}
+```
+
+> [!WARNING]
+> Remove the `server.url` before building for production! It's only for development.
+
+---
+
+## Troubleshooting
+
+| Issue | Fix |
+|---|---|
+| Gradle sync fails | File → Invalidate Caches → Restart Android Studio |
+| White screen on launch | Run `npx cap sync` — web assets may not have copied |
+| Location not working | Check device permissions in Settings → Apps → GeoVerify |
+| API calls failing | Ensure `VITE_API_BASE_URL` points to your deployed backend (not localhost) |
+| Build error "SDK not found" | Set `ANDROID_HOME` env variable or update `local.properties` |
+
+> [!IMPORTANT]
+> For production builds, update `.env` to point `VITE_API_BASE_URL` to your deployed backend URL instead of `http://localhost:8000`.

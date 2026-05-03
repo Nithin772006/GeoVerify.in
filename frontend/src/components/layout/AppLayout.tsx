@@ -15,18 +15,18 @@ export const AppLayout = () => {
   }, [collapsed]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-slate-900 transition-colors duration-300 dark:text-white">
+    <div className="relative h-[100dvh] overflow-hidden text-slate-900 transition-colors duration-300 dark:text-white">
       <Background3D variant="app" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.42),transparent_35%),linear-gradient(180deg,rgba(248,250,252,0.68),rgba(248,250,252,0.2))] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.08),transparent_28%),linear-gradient(180deg,rgba(2,6,23,0.7),rgba(2,6,23,0.82))]" />
 
-      <div className="relative z-10 flex min-h-screen">
+      <div className="relative z-10 flex h-[100dvh]">
         <Sidebar
           collapsed={collapsed}
           mobileOpen={mobileOpen}
           onCollapseToggle={() => setCollapsed((current) => !current)}
           onMobileClose={() => setMobileOpen(false)}
         />
-        <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex h-[100dvh] min-w-0 flex-1 flex-col overflow-hidden">
           <TopNav onMenuClick={() => setMobileOpen(true)} />
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 xl:px-8">
             <div className="mx-auto max-w-7xl">

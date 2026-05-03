@@ -143,7 +143,11 @@ function ReactiveRig({ variant }: { variant: 'auth' | 'app' }) {
 export const Background3D = ({ variant = 'auth', className }: Background3DProps) => {
   return (
     <div className={cn('pointer-events-none fixed inset-0 -z-10', className)}>
-      <Canvas camera={{ position: [0, 0, 6], fov: 70 }} dpr={[1, 1.8]}>
+      <Canvas
+        camera={{ position: [0, 0, 6], fov: 70 }}
+        dpr={[1, 1.8]}
+        style={{ pointerEvents: 'none', touchAction: 'none' }}
+      >
         <ambientLight intensity={0.45} />
         <directionalLight position={[5, 4, 4]} intensity={0.9} />
         <pointLight position={[-4, -4, 4]} intensity={0.35} color="#e0f2fe" />
@@ -152,3 +156,4 @@ export const Background3D = ({ variant = 'auth', className }: Background3DProps)
     </div>
   );
 };
+

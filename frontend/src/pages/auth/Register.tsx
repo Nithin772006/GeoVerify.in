@@ -84,9 +84,9 @@ export default function Register() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-y-auto">
       <Background3D variant="auth" />
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(2,6,23,0.88),rgba(8,15,32,0.62),rgba(15,23,42,0.88))]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(2,6,23,0.88),rgba(8,15,32,0.62),rgba(15,23,42,0.88))]" />
 
       <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl gap-10 px-4 py-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:px-8">
         <motion.div

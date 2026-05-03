@@ -17,6 +17,11 @@
 
 html {
   scroll-behavior: smooth;
+  /* Safe area insets for notched devices (status bar, navigation bar) */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 :root {
@@ -27,6 +32,11 @@ body {
   @apply text-slate-900 antialiased;
   font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   min-height: 100vh;
+  padding-top: var(--sat);
+  padding-bottom: var(--sab);
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+  -webkit-overflow-scrolling: touch;
   background:
     radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 28%),
     radial-gradient(circle at 80% 15%, rgba(45, 212, 191, 0.18), transparent 24%),
@@ -59,26 +69,15 @@ body::before {
   opacity: 0.18;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
   font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
-}
-
-#root {
-  min-height: 100vh;
 }
 
 .text-muted {
   @apply text-slate-500 dark:text-slate-300/60;
 }
 
-.glass-input,
-.glass-select,
-.glass-textarea {
+.glass-input, .glass-select, .glass-textarea {
   @apply w-full rounded-2xl border border-white/55 bg-white/72 px-4 py-3 text-sm text-slate-900 outline-none shadow-[0_15px_35px_rgba(148,163,184,0.16)] transition-all placeholder:text-slate-400 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/35 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-400/55 dark:focus:border-cyan-400/40 dark:focus:ring-cyan-400/25;
 }
 
@@ -138,3 +137,28 @@ h6 {
   background: rgba(37, 99, 235, 0.3);
   color: inherit;
 }
+
+/* Disable double-tap zoom only on interactive elements (not scroll containers) */
+button, a, [role="button"] {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection on text content */
+p, span, h1, h2, h3, h4, h5, h6, li, td, th, label, .selectable {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Capacitor keyboard push-up fix */
+.capacitor-keyboard-open {
+  overflow: hidden;
+}
+
+/* Bottom navigation safe area padding (for Android gesture nav) */
+.mobile-bottom-safe {
+  padding-bottom: calc(var(--sab) + 8px);
+}
+
