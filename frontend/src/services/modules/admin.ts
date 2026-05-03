@@ -34,11 +34,16 @@ function unwrapRelation<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null;
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
+function getErrorMessage(error: any, fallback: string) {
+  if (error?.response?.data?.detail) {
+    return error.response.data.detail;
+  }
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return error.message;
   }
-
   return fallback;
 }
 

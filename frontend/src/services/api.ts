@@ -14,4 +14,17 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Interceptor to handle 401 Unauthorized errors globally
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Token is likely expired or invalid, force logout
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
